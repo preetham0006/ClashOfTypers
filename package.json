@@ -1,0 +1,22 @@
+{
+  "name": "clashoftypers",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @clashoftypers/web\" \"npm run dev -w @clashoftypers/server\"",
+    "dev:web": "npm run dev -w @clashoftypers/web",
+    "dev:server": "npm run dev -w @clashoftypers/server",
+    "build": "npm run build -w @clashoftypers/web && npm run build -w @clashoftypers/server",
+    "lint": "npm run lint -w @clashoftypers/web && npm run lint -w @clashoftypers/server",
+    "db:generate": "npm run db:generate -w @clashoftypers/server",
+    "db:migrate": "npm run db:migrate -w @clashoftypers/server",
+    "db:seed": "npm run db:seed -w @clashoftypers/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
