@@ -14,7 +14,10 @@ This repository is scaffolded as a monorepo with:
 ## Prerequisites
 
 - Node.js 20+
-- Docker Desktop
+
+Optional for later multiplayer infra tests:
+
+- Docker Desktop (Postgres/Redis containers)
 
 ## Project Structure
 
@@ -34,13 +37,7 @@ packages/
 npm install
 ```
 
-2. Start Postgres and Redis:
-
-```bash
-docker compose up -d
-```
-
-3. Create env files from examples:
+2. Create env files from examples:
 
 ```bash
 copy .env.example .env
@@ -48,20 +45,20 @@ copy apps\server\.env.example apps\server\.env
 copy apps\web\.env.local.example apps\web\.env.local
 ```
 
-4. Generate Prisma client and run first migration:
+3. Generate Prisma client and run first migration:
 
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
 
-5. Optional seed data:
+4. Optional seed data:
 
 ```bash
 npm run db:seed
 ```
 
-6. Start web + server together:
+5. Start web + server together:
 
 ```bash
 npm run dev
@@ -71,7 +68,15 @@ npm run dev
 
 - Web runs at `http://localhost:3000`
 - Server health check works at `http://localhost:4000/health`
-- Postgres and Redis containers are up
+- Prisma migration succeeds with local SQLite database
+
+## Optional Docker Services
+
+If you want containerized Postgres/Redis later:
+
+```bash
+docker compose up -d
+```
 - Prisma migration succeeds
 
 ## What Comes Next (Day 2)

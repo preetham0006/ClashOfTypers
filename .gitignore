@@ -9,3 +9,5 @@ coverage/
 *.log
 .vscode/
 .DS_Store
+*.db
+*.db-journal
