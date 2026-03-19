@@ -7,6 +7,7 @@ import { authRoutes } from "./auth/routes/auth.routes.js";
 import { roomRoutes } from "./rooms/routes/room.routes.js";
 import { verifyAuthToken } from "./auth/utils/jwt.js";
 import { emitRoomUpdate, setSocketServer } from "./socket/socket-state.js";
+import { getMatchState, submitTypingProgress } from "./match/game-engine.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +63,14 @@ io.on("connection", (socket) => {
 
     await socket.join(`room:${roomCode}`);
     await emitRoomUpdate(roomCode);
+
+    const matchState = getMatchState(roomCode);
+    if (matchState) {
+      socket.emit("room:matchState", {
+        roomCode,
+        ...matchState
+      });
+    }
   });
 
   socket.on("room:unsubscribe", async (payload: { roomCode?: string }) => {
@@ -73,6 +82,24 @@ io.on("connection", (socket) => {
 
     await socket.leave(`room:${roomCode}`);
   });
+
+  socket.on(
+    "room:typingProgress",
+    (payload: { roomCode?: string; typedLength?: number; correctCharacters?: number; mistakes?: number }) => {
+      const roomCode = (payload.roomCode ?? "").toUpperCase();
+      const userId = socket.data.authUser?.userId as string | undefined;
+
+      if (!roomCode || !userId) {
+        return;
+      }
+
+      submitTypingProgress(roomCode, userId, {
+        typedLength: Number(payload.typedLength ?? 0),
+        correctCharacters: Number(payload.correctCharacters ?? 0),
+        mistakes: Number(payload.mistakes ?? 0)
+      });
+    }
+  );
 
   socket.on("disconnect", () => {
     // Placeholder for room cleanup and presence handling.

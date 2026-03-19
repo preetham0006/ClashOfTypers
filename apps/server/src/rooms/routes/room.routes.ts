@@ -9,6 +9,7 @@ import {
 } from "../room.service.js";
 import { createRoomSchema, joinRoomSchema } from "../validators/room.validators.js";
 import { emitRoomUpdate } from "../../socket/socket-state.js";
+import { startMatch } from "../../match/game-engine.js";
 
 export const roomRoutes = Router();
 
@@ -106,4 +107,31 @@ roomRoutes.post("/:code/leave", authMiddleware, async (req: AuthenticatedRequest
 
   await emitRoomUpdate(roomCode);
   res.status(200).json({ message: "Left room successfully" });
+});
+
+roomRoutes.post("/:code/start", authMiddleware, async (req: AuthenticatedRequest, res) => {
+  const userId = req.authUser?.userId;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const rawCode = req.params.code;
+  const roomCode = (Array.isArray(rawCode) ? rawCode[0] : rawCode ?? "").toUpperCase();
+
+  if (!roomCode) {
+    res.status(400).json({ message: "Room code is required" });
+    return;
+  }
+
+  const result = await startMatch(roomCode, userId);
+
+  if ("error" in result) {
+    const statusCode = result.error === "Room not found" ? 404 : 400;
+    res.status(statusCode).json({ message: result.error });
+    return;
+  }
+
+  res.status(200).json({ match: result });
 });

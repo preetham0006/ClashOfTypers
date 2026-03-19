@@ -7,6 +7,14 @@ export function setSocketServer(io: Server) {
   socketServer = io;
 }
 
+export function emitRoomEvent(roomCode: string, eventName: string, payload: unknown) {
+  if (!socketServer) {
+    return;
+  }
+
+  socketServer.to(`room:${roomCode.toUpperCase()}`).emit(eventName, payload);
+}
+
 export async function emitRoomUpdate(roomCode: string) {
   if (!socketServer) {
     return;
