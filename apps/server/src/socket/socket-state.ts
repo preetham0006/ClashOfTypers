@@ -7,6 +7,10 @@ export function setSocketServer(io: Server) {
   socketServer = io;
 }
 
+export function getSocketServer() {
+  return socketServer;
+}
+
 export function emitRoomEvent(roomCode: string, eventName: string, payload: unknown) {
   if (!socketServer) {
     return;

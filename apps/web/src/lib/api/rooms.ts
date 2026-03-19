@@ -102,3 +102,21 @@ export async function leaveRoom(token: string, roomCode: string) {
 
   return parseResponse<{ message: string }>(response);
 }
+
+export async function startRoomMatch(token: string, roomCode: string) {
+  const response = await fetch(`${apiBaseUrl}/rooms/${roomCode}/start`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return parseResponse<{
+    match: {
+      matchId: string;
+      roundId: string;
+      roomCode: string;
+      status: "countdown";
+    };
+  }>(response);
+}

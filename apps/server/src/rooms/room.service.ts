@@ -110,7 +110,7 @@ export async function joinRoomByCode(userId: string, roomCode: string) {
     return { error: "Room is inactive" as const };
   }
 
-  const alreadyJoined = room.participants.some((participant) => participant.userId === userId);
+  const alreadyJoined = room.participants.some((participant: { userId: string }) => participant.userId === userId);
   if (alreadyJoined) {
     return { room };
   }
@@ -137,7 +137,7 @@ export async function leaveRoomByCode(userId: string, roomCode: string) {
     return { error: "Room not found" as const };
   }
 
-  const participant = room.participants.find((entry) => entry.userId === userId);
+  const participant = room.participants.find((entry: { userId: string }) => entry.userId === userId);
   if (!participant) {
     return { error: "You are not in this room" as const };
   }
