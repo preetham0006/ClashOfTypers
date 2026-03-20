@@ -24,6 +24,41 @@ export interface Room {
   participants: RoomParticipant[];
 }
 
+export interface MatchHistoryStat {
+  userId: string;
+  wpm: number;
+  accuracy: number;
+  charactersTyped: number;
+  correctCharacters: number;
+  mistakes: number;
+  user: {
+    id: string;
+    username: string;
+  };
+}
+
+export interface MatchHistoryRound {
+  id: string;
+  roundNumber: number;
+  startedAt: string | null;
+  endedAt: string | null;
+  stats: MatchHistoryStat[];
+}
+
+export interface MatchHistoryItem {
+  id: string;
+  winnerId: string | null;
+  status: string;
+  createdAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  room?: {
+    id: string;
+    code: string;
+  };
+  rounds: MatchHistoryRound[];
+}
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -119,4 +154,28 @@ export async function startRoomMatch(token: string, roomCode: string) {
       status: "countdown";
     };
   }>(response);
+}
+
+export async function getMyRecentMatches(token: string, limit = 10) {
+  const response = await fetch(`${apiBaseUrl}/rooms/me/matches?limit=${limit}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    cache: "no-store"
+  });
+
+  return parseResponse<{ matches: MatchHistoryItem[] }>(response);
+}
+
+export async function getRoomRecentMatches(token: string, roomCode: string, limit = 10) {
+  const response = await fetch(`${apiBaseUrl}/rooms/${roomCode}/matches?limit=${limit}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    cache: "no-store"
+  });
+
+  return parseResponse<{ matches: MatchHistoryItem[] }>(response);
 }

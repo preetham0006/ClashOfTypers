@@ -9,6 +9,49 @@ import { verifyAuthToken } from "./auth/utils/jwt.js";
 import { emitRoomUpdate, setSocketServer } from "./socket/socket-state.js";
 import { getMatchState, submitTypingProgress } from "./match/game-engine.js";
 
+const roomPresence = new Map<string, Map<string, number>>();
+
+function emitPresence(roomCode: string) {
+  const normalizedCode = roomCode.toUpperCase();
+  const presence = roomPresence.get(normalizedCode);
+  const connectedUserIds = presence ? Array.from(presence.keys()) : [];
+
+  io.to(`room:${normalizedCode}`).emit("room:presence", {
+    roomCode: normalizedCode,
+    connectedUserIds
+  });
+}
+
+function addPresence(roomCode: string, userId: string) {
+  const normalizedCode = roomCode.toUpperCase();
+  const roomMap = roomPresence.get(normalizedCode) ?? new Map<string, number>();
+  roomMap.set(userId, (roomMap.get(userId) ?? 0) + 1);
+  roomPresence.set(normalizedCode, roomMap);
+  emitPresence(normalizedCode);
+}
+
+function removePresence(roomCode: string, userId: string) {
+  const normalizedCode = roomCode.toUpperCase();
+  const roomMap = roomPresence.get(normalizedCode);
+
+  if (!roomMap) {
+    return;
+  }
+
+  const next = (roomMap.get(userId) ?? 0) - 1;
+  if (next <= 0) {
+    roomMap.delete(userId);
+  } else {
+    roomMap.set(userId, next);
+  }
+
+  if (roomMap.size === 0) {
+    roomPresence.delete(normalizedCode);
+  }
+
+  emitPresence(normalizedCode);
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -52,6 +95,7 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
+  const subscribedRooms = new Set<string>();
   socket.emit("server:hello", { message: "Connected to ClashOfTypers socket server" });
 
   socket.on("room:subscribe", async (payload: { roomCode?: string }) => {
@@ -62,15 +106,23 @@ io.on("connection", (socket) => {
     }
 
     await socket.join(`room:${roomCode}`);
+
+    if (!subscribedRooms.has(roomCode)) {
+      subscribedRooms.add(roomCode);
+      addPresence(roomCode, socket.data.authUser.userId as string);
+    }
+
     await emitRoomUpdate(roomCode);
 
-    const matchState = getMatchState(roomCode);
+    const matchState = getMatchState(roomCode, socket.data.authUser.userId as string);
     if (matchState) {
       socket.emit("room:matchState", {
         roomCode,
         ...matchState
       });
     }
+
+    emitPresence(roomCode);
   });
 
   socket.on("room:unsubscribe", async (payload: { roomCode?: string }) => {
@@ -81,6 +133,11 @@ io.on("connection", (socket) => {
     }
 
     await socket.leave(`room:${roomCode}`);
+
+    if (subscribedRooms.has(roomCode)) {
+      subscribedRooms.delete(roomCode);
+      removePresence(roomCode, socket.data.authUser.userId as string);
+    }
   });
 
   socket.on(
@@ -93,16 +150,28 @@ io.on("connection", (socket) => {
         return;
       }
 
-      submitTypingProgress(roomCode, userId, {
+      const result = submitTypingProgress(roomCode, userId, {
         typedLength: Number(payload.typedLength ?? 0),
         correctCharacters: Number(payload.correctCharacters ?? 0),
         mistakes: Number(payload.mistakes ?? 0)
       });
+
+      if (result?.error) {
+        socket.emit("room:progressRejected", { roomCode, reason: result.error });
+      }
     }
   );
 
   socket.on("disconnect", () => {
-    // Placeholder for room cleanup and presence handling.
+    const userId = socket.data.authUser?.userId as string | undefined;
+
+    if (!userId) {
+      return;
+    }
+
+    for (const roomCode of subscribedRooms) {
+      removePresence(roomCode, userId);
+    }
   });
 });
 

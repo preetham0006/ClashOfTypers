@@ -28,6 +28,7 @@ interface MatchSession {
   endAtMs: number | null;
   participants: Map<string, { username: string }>;
   progress: Map<string, ParticipantProgress>;
+  lastAcceptedSubmitByUser: Map<string, { atMs: number; typedLength: number; correctCharacters: number }>;
   countdownInterval?: NodeJS.Timeout;
   roundTimeout?: NodeJS.Timeout;
 }
@@ -44,7 +45,7 @@ function toStandings(session: MatchSession): ParticipantProgress[] {
   });
 }
 
-export function getMatchState(roomCode: string) {
+export function getMatchState(roomCode: string, userId?: string) {
   const session = activeSessions.get(roomCode.toUpperCase());
 
   if (!session) {
@@ -58,7 +59,8 @@ export function getMatchState(roomCode: string) {
     countdownRemainingSec: session.countdownRemainingSec,
     startedAtMs: session.startedAtMs,
     endAtMs: session.endAtMs,
-    standings: toStandings(session)
+    standings: toStandings(session),
+    selfProgress: userId ? (session.progress.get(userId) ?? null) : null
   };
 }
 
@@ -198,7 +200,8 @@ export async function startMatch(roomCode: string, requestedByUserId: string) {
     startedAtMs: null,
     endAtMs: null,
     participants: new Map(),
-    progress: new Map()
+    progress: new Map(),
+    lastAcceptedSubmitByUser: new Map()
   };
 
   for (const participant of room.participants) {
@@ -269,10 +272,32 @@ export function submitTypingProgress(
     return { error: "User not in active room" as const };
   }
 
+  const nowMs = Date.now();
+  const last = session.lastAcceptedSubmitByUser.get(userId);
+  if (last && nowMs - last.atMs < 50) {
+    return { error: "Too many updates" as const };
+  }
+
   const maxLength = session.paragraph.length;
   const typedLength = Math.max(0, Math.min(payload.typedLength, maxLength));
   const correctCharacters = Math.max(0, Math.min(payload.correctCharacters, typedLength));
-  const mistakes = Math.max(0, Math.min(payload.mistakes, typedLength));
+
+  if (last && (typedLength < last.typedLength || correctCharacters < last.correctCharacters)) {
+    return { error: "Invalid progress sequence" as const };
+  }
+
+  if (last) {
+    const elapsedSec = Math.max((nowMs - last.atMs) / 1000, 0.05);
+    const maxDeltaCharacters = Math.ceil(elapsedSec * 30);
+    const typedDelta = typedLength - last.typedLength;
+    const correctDelta = correctCharacters - last.correctCharacters;
+
+    if (typedDelta > maxDeltaCharacters || correctDelta > maxDeltaCharacters) {
+      return { error: "Suspicious typing speed detected" as const };
+    }
+  }
+
+  const mistakes = Math.max(0, typedLength - correctCharacters);
 
   const elapsedMinutes = Math.max((Date.now() - session.startedAtMs) / 60000, 1 / 120);
   const wpm = Number(((correctCharacters / 5) / elapsedMinutes).toFixed(2));
@@ -286,6 +311,12 @@ export function submitTypingProgress(
     mistakes,
     wpm,
     accuracy
+  });
+
+  session.lastAcceptedSubmitByUser.set(userId, {
+    atMs: nowMs,
+    typedLength,
+    correctCharacters
   });
 
   const standings = toStandings(session);

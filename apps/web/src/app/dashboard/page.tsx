@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createRoom, joinRoom } from "../../lib/api/rooms";
+import { createRoom, getMyRecentMatches, joinRoom, type MatchHistoryItem } from "../../lib/api/rooms";
 import { useAuthStore } from "../../store/auth.store";
 
 export default function DashboardPage() {
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [recentMatches, setRecentMatches] = useState<MatchHistoryItem[]>([]);
 
   useEffect(() => {
     void hydrateUser();
@@ -25,6 +26,33 @@ export default function DashboardPage() {
       router.replace("/login");
     }
   }, [isHydrating, router, user]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadRecentMatches() {
+      try {
+        const response = await getMyRecentMatches(token, 5);
+        if (active) {
+          setRecentMatches(response.matches);
+        }
+      } catch {
+        if (active) {
+          setRecentMatches([]);
+        }
+      }
+    }
+
+    void loadRecentMatches();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   if (isHydrating || !user) {
     return (
@@ -164,6 +192,36 @@ export default function DashboardPage() {
         </div>
 
         {joinError ? <p className="mt-3 text-sm text-red-600">{joinError}</p> : null}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Recent Matches</h2>
+        {recentMatches.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-600">No completed matches yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {recentMatches.map((match) => {
+              const topStat = match.rounds[0]?.stats[0];
+              const isWinner = match.winnerId === user.id;
+
+              return (
+                <li key={match.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">
+                    Room {match.room?.code ?? "-"} | {isWinner ? "Won" : "Played"}
+                  </p>
+                  <p className="mt-1 text-slate-600">
+                    {match.endedAt ? new Date(match.endedAt).toLocaleString() : "Completed"}
+                  </p>
+                  {topStat ? (
+                    <p className="mt-1 text-slate-600">
+                      Top Score: {topStat.user.username} | WPM {topStat.wpm.toFixed(2)} | Acc {topStat.accuracy.toFixed(2)}%
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
     </main>
   );

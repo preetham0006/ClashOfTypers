@@ -162,3 +162,98 @@ export async function leaveRoomByCode(userId: string, roomCode: string) {
 
   return { success: true as const };
 }
+
+export async function getRecentMatchesForRoom(roomCode: string, limit = 10) {
+  const room = await prisma.room.findUnique({
+    where: { code: roomCode.toUpperCase() },
+    select: { id: true }
+  });
+
+  if (!room) {
+    return { error: "Room not found" as const };
+  }
+
+  const matches = await prisma.match.findMany({
+    where: {
+      roomId: room.id,
+      status: "COMPLETED"
+    },
+    orderBy: {
+      endedAt: "desc"
+    },
+    take: limit,
+    include: {
+      rounds: {
+        orderBy: { roundNumber: "asc" },
+        include: {
+          stats: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true
+                }
+              }
+            },
+            orderBy: [
+              { correctCharacters: "desc" },
+              { accuracy: "desc" }
+            ]
+          }
+        }
+      }
+    }
+  });
+
+  return { matches };
+}
+
+export async function getRecentMatchesForUser(userId: string, limit = 10) {
+  const matches = await prisma.match.findMany({
+    where: {
+      status: "COMPLETED",
+      rounds: {
+        some: {
+          stats: {
+            some: {
+              userId
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      endedAt: "desc"
+    },
+    take: limit,
+    include: {
+      room: {
+        select: {
+          id: true,
+          code: true
+        }
+      },
+      rounds: {
+        orderBy: { roundNumber: "asc" },
+        include: {
+          stats: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true
+                }
+              }
+            },
+            orderBy: [
+              { correctCharacters: "desc" },
+              { accuracy: "desc" }
+            ]
+          }
+        }
+      }
+    }
+  });
+
+  return { matches };
+}

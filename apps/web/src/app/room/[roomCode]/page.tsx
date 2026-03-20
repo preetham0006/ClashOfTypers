@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getRoom, leaveRoom, startRoomMatch, type Room } from "../../../lib/api/rooms";
+import { getRoom, getRoomRecentMatches, leaveRoom, startRoomMatch, type MatchHistoryItem, type Room } from "../../../lib/api/rooms";
 import { createSocket } from "../../../lib/socket";
 import { useAuthStore } from "../../../store/auth.store";
 
@@ -54,6 +54,9 @@ export default function RoomPage() {
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
   const [standings, setStandings] = useState<MatchStanding[]>([]);
   const [winnerUserId, setWinnerUserId] = useState<string | null>(null);
+  const [connectedUserIds, setConnectedUserIds] = useState<string[]>([]);
+  const [roomMatches, setRoomMatches] = useState<MatchHistoryItem[]>([]);
+  const [progressWarning, setProgressWarning] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof createSocket> | null>(null);
 
   useEffect(() => {
@@ -107,6 +110,35 @@ export default function RoomPage() {
       return;
     }
 
+    const authToken = token;
+
+    let active = true;
+
+    async function loadRoomMatches() {
+      try {
+        const response = await getRoomRecentMatches(authToken, roomCode, 5);
+        if (active) {
+          setRoomMatches(response.matches);
+        }
+      } catch {
+        if (active) {
+          setRoomMatches([]);
+        }
+      }
+    }
+
+    void loadRoomMatches();
+
+    return () => {
+      active = false;
+    };
+  }, [token, roomCode, phase]);
+
+  useEffect(() => {
+    if (!token || !roomCode) {
+      return;
+    }
+
     const socket = createSocket(token);
     socketRef.current = socket;
 
@@ -127,6 +159,7 @@ export default function RoomPage() {
         startedAtMs: number | null;
         endAtMs: number | null;
         standings: MatchStanding[];
+        selfProgress: MatchStanding | null;
       }) => {
         setPhase(payload.phase);
         setParagraph(payload.paragraph);
@@ -142,9 +175,25 @@ export default function RoomPage() {
 
         if (payload.phase !== "running") {
           setTypedText("");
+          localStorage.removeItem(`cot-room-draft-${roomCode}`);
+        } else {
+          const savedDraft = localStorage.getItem(`cot-room-draft-${roomCode}`) ?? "";
+          const maxLength = payload.selfProgress?.typedLength ?? payload.paragraph.length;
+          setTypedText(savedDraft.slice(0, maxLength));
         }
       }
     );
+
+    socket.on("room:presence", (payload: { connectedUserIds: string[] }) => {
+      setConnectedUserIds(payload.connectedUserIds ?? []);
+    });
+
+    socket.on("room:progressRejected", (payload: { reason?: string }) => {
+      setProgressWarning(payload.reason ?? "Progress update rejected by server validation.");
+      setTimeout(() => {
+        setProgressWarning(null);
+      }, 1800);
+    });
 
     socket.on("room:matchCountdown", (payload: { secondsRemaining: number }) => {
       setPhase("countdown");
@@ -177,6 +226,7 @@ export default function RoomPage() {
       setStandings(payload.standings ?? []);
       setRemainingSec(0);
       setEndAtMs(null);
+      localStorage.removeItem(`cot-room-draft-${roomCode}`);
     });
 
     return () => {
@@ -187,6 +237,8 @@ export default function RoomPage() {
       socket.off("room:matchStart");
       socket.off("room:progress");
       socket.off("room:matchEnd");
+      socket.off("room:presence");
+      socket.off("room:progressRejected");
       socket.disconnect();
       socketRef.current = null;
     };
@@ -231,6 +283,7 @@ export default function RoomPage() {
 
     const nextStats = getTypingStats(paragraph, nextValue);
     setTypedText(nextStats.value);
+    localStorage.setItem(`cot-room-draft-${roomCode}`, nextStats.value);
 
     const socket = socketRef.current;
     if (!socket || !socket.connected) {
@@ -351,6 +404,7 @@ export default function RoomPage() {
             <li key={participant.id} className="rounded-md border border-slate-200 px-3 py-2 text-slate-700">
               {participant.user.username}
               {participant.user.id === room.creatorId ? " (Host)" : ""}
+              {connectedUserIds.includes(participant.user.id) ? " | Online" : " | Offline"}
             </li>
           ))}
         </ul>
@@ -398,6 +452,8 @@ export default function RoomPage() {
           placeholder={phase === "running" ? "Start typing the paragraph..." : "Waiting for match to start"}
           disabled={phase !== "running"}
         />
+
+        {progressWarning ? <p className="mt-2 text-sm text-amber-700">{progressWarning}</p> : null}
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -419,6 +475,28 @@ export default function RoomPage() {
                 </span>
               </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Recent Room Matches</h2>
+        {roomMatches.length === 0 ? (
+          <p className="mt-3 text-slate-600">No completed matches yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {roomMatches.map((match) => {
+              const winner = match.rounds[0]?.stats.find((entry) => entry.userId === match.winnerId)?.user.username;
+
+              return (
+                <li key={match.id} className="rounded-md border border-slate-200 px-3 py-2 text-slate-700">
+                  <p className="font-medium text-slate-900">{winner ? `Winner: ${winner}` : "Winner: TBD"}</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {match.endedAt ? new Date(match.endedAt).toLocaleString() : "Completed"}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
