@@ -32,11 +32,13 @@ export default function DashboardPage() {
       return;
     }
 
+    const authToken: string = token;
+
     let active = true;
 
     async function loadRecentMatches() {
       try {
-        const response = await getMyRecentMatches(token, 5);
+        const response = await getMyRecentMatches(authToken, 5);
         if (active) {
           setRecentMatches(response.matches);
         }
