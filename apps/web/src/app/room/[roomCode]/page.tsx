@@ -322,19 +322,19 @@ export default function RoomPage() {
 
   if (isHydrating || isLoading) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-10">
-        <p className="text-slate-600">Loading room...</p>
+      <main className="mx-auto flex min-h-screen max-w-6xl items-center px-5 py-10 sm:px-8">
+        <p className="text-base font-semibold text-amber-100">Loading battle room...</p>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-10">
-        <h1 className="text-2xl font-bold text-slate-900">Room Error</h1>
-        <p className="mt-3 text-red-600">{error}</p>
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-5 py-10 sm:px-8">
+        <h1 className="text-3xl font-bold text-amber-100">Room Error</h1>
+        <p className="mt-3 text-red-300">{error}</p>
         <button
-          className="mt-6 w-fit rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+          className="coc-btn-primary mt-6 w-fit px-4 py-2 text-sm"
           type="button"
           onClick={() => router.replace("/dashboard")}
         >
@@ -349,16 +349,17 @@ export default function RoomPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-10 sm:px-8">
+      <div className="coc-shell coc-enter flex flex-wrap items-start justify-between gap-3 p-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Room {room.code}</h1>
-          <p className="mt-2 text-slate-600">Hosted by {room.creator.username}</p>
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-amber-800">Battle Room</p>
+          <h1 className="mt-1 text-3xl font-bold text-amber-950">Room {room.code}</h1>
+          <p className="mt-2 text-amber-900">Hosted by {room.creator.username}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {user?.id === room.creatorId ? (
             <button
-              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              className="coc-btn-primary px-4 py-2 text-sm disabled:opacity-60"
               type="button"
               onClick={() => {
                 void handleStartMatch();
@@ -369,7 +370,7 @@ export default function RoomPage() {
             </button>
           ) : null}
           <button
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900"
+            className="coc-btn-secondary px-4 py-2 text-sm"
             type="button"
             onClick={() => {
               void handleCopyInvite();
@@ -378,7 +379,7 @@ export default function RoomPage() {
             Copy Invite
           </button>
           <button
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="coc-btn-danger px-4 py-2 text-sm disabled:opacity-60"
             type="button"
             onClick={() => {
               void handleLeaveRoom();
@@ -390,61 +391,63 @@ export default function RoomPage() {
         </div>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Settings</h2>
-        <p className="mt-3 text-slate-700">Duration: {room.durationSec}s</p>
-        <p className="mt-1 text-slate-700">Rounds: Best of {room.bestOf}</p>
-        <p className="mt-1 text-slate-700">Players: {room.participants.length} / {room.maxPlayers}</p>
-      </section>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section className="coc-card p-6">
+          <h2 className="text-xl font-bold text-amber-950">Room Settings</h2>
+          <p className="mt-3 text-amber-900">Duration: {room.durationSec}s</p>
+          <p className="mt-1 text-amber-900">Rounds: Best of {room.bestOf}</p>
+          <p className="mt-1 text-amber-900">Players: {room.participants.length} / {room.maxPlayers}</p>
+        </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Players</h2>
+        <section className="coc-card p-6">
+          <h2 className="text-xl font-bold text-amber-950">Players</h2>
         <ul className="mt-4 space-y-2">
           {room.participants.map((participant) => (
-            <li key={participant.id} className="rounded-md border border-slate-200 px-3 py-2 text-slate-700">
+            <li key={participant.id} className="rounded-xl border border-amber-300 bg-amber-50/80 px-3 py-2 text-amber-900">
               {participant.user.username}
               {participant.user.id === room.creatorId ? " (Host)" : ""}
               {connectedUserIds.includes(participant.user.id) ? " | Online" : " | Offline"}
             </li>
           ))}
         </ul>
-      </section>
+        </section>
+      </div>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Match</h2>
-        <p className="mt-3 text-slate-700">
+      <section className="coc-card mt-6 p-6">
+        <h2 className="text-xl font-bold text-amber-950">Match Arena</h2>
+        <p className="mt-3 text-amber-900">
           Status:{" "}
-          <span className="font-medium capitalize text-slate-900">
+          <span className="font-bold capitalize text-amber-950">
             {phase === "idle" ? "Waiting to start" : phase}
           </span>
         </p>
 
         {phase === "countdown" && countdownSec !== null ? (
-          <p className="mt-2 text-2xl font-bold text-amber-700">Starting in {countdownSec}...</p>
+          <p className="mt-2 text-2xl font-bold text-orange-700">Starting in {countdownSec}...</p>
         ) : null}
 
         {phase === "running" ? (
-          <p className="mt-2 text-xl font-semibold text-emerald-700">Time left: {remainingSec ?? 0}s</p>
+          <p className="mt-2 text-xl font-semibold text-green-700">Time left: {remainingSec ?? 0}s</p>
         ) : null}
 
         {phase === "ended" && winnerUserId ? (
-          <p className="mt-2 text-emerald-700">
+          <p className="mt-2 font-semibold text-green-700">
             Winner: {winnerUserId === user?.id ? "You" : standings.find((item) => item.userId === winnerUserId)?.username}
           </p>
         ) : null}
 
         {paragraph ? (
-          <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4 text-slate-800">
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50/80 p-4 font-semibold leading-relaxed text-amber-950">
             {paragraph}
           </div>
         ) : null}
 
-        <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="typing-input">
+        <label className="mt-4 block text-sm font-bold text-amber-900" htmlFor="typing-input">
           Type here
         </label>
         <textarea
           id="typing-input"
-          className="mt-2 min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 disabled:bg-slate-100"
+          className="coc-input mt-2 min-h-28 w-full px-3 py-2 disabled:bg-amber-100/60"
           value={typedText}
           onChange={(event) => {
             handleTypingChange(event.target.value);
@@ -453,19 +456,19 @@ export default function RoomPage() {
           disabled={phase !== "running"}
         />
 
-        {progressWarning ? <p className="mt-2 text-sm text-amber-700">{progressWarning}</p> : null}
+        {progressWarning ? <p className="mt-2 text-sm font-semibold text-orange-700">{progressWarning}</p> : null}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Live Leaderboard</h2>
+      <section className="coc-card mt-6 p-6">
+        <h2 className="text-xl font-bold text-amber-950">Live Leaderboard</h2>
         {standings.length === 0 ? (
-          <p className="mt-3 text-slate-600">No stats yet.</p>
+          <p className="mt-3 text-amber-900">No stats yet.</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {standings.map((item, index) => (
               <li
                 key={item.userId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-2 text-slate-700"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50/80 px-3 py-2 text-amber-900"
               >
                 <span>
                   #{index + 1} {item.username}
@@ -479,19 +482,19 @@ export default function RoomPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Recent Room Matches</h2>
+      <section className="coc-card mt-6 p-6">
+        <h2 className="text-xl font-bold text-amber-950">Recent Room Matches</h2>
         {roomMatches.length === 0 ? (
-          <p className="mt-3 text-slate-600">No completed matches yet.</p>
+          <p className="mt-3 text-amber-900">No completed matches yet.</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {roomMatches.map((match) => {
               const winner = match.rounds[0]?.stats.find((entry) => entry.userId === match.winnerId)?.user.username;
 
               return (
-                <li key={match.id} className="rounded-md border border-slate-200 px-3 py-2 text-slate-700">
-                  <p className="font-medium text-slate-900">{winner ? `Winner: ${winner}` : "Winner: TBD"}</p>
-                  <p className="mt-1 text-sm text-slate-600">
+                <li key={match.id} className="rounded-xl border border-amber-300 bg-amber-50/80 px-3 py-2 text-amber-900">
+                  <p className="font-bold text-amber-950">{winner ? `Winner: ${winner}` : "Winner: TBD"}</p>
+                  <p className="mt-1 text-sm text-amber-800">
                     {match.endedAt ? new Date(match.endedAt).toLocaleString() : "Completed"}
                   </p>
                 </li>

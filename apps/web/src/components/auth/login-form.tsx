@@ -41,11 +41,11 @@ export function LoginForm() {
   }
 
   return (
-    <form className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleSubmit}>
+    <form className="coc-card flex flex-col gap-4 p-6" onSubmit={handleSubmit}>
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-slate-700">Email</span>
+        <span className="text-sm font-bold text-amber-900">Email</span>
         <input
-          className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+          className="coc-input px-3 py-2"
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -56,9 +56,9 @@ export function LoginForm() {
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-slate-700">Password</span>
+        <span className="text-sm font-bold text-amber-900">Password</span>
         <input
-          className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-slate-900"
+          className="coc-input px-3 py-2"
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -68,14 +68,14 @@ export function LoginForm() {
         />
       </label>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm font-semibold text-red-700">{error}</p> : null}
 
-      <button className="rounded-md bg-slate-900 px-4 py-2 font-medium text-white disabled:opacity-60" type="submit" disabled={isSubmitting}>
+      <button className="coc-btn-primary px-4 py-2 disabled:opacity-60" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Logging in..." : "Login"}
       </button>
 
-      <p className="text-sm text-slate-600">
-        Need an account? <Link className="font-medium text-slate-900 underline" href="/signup">Create one</Link>
+      <p className="text-sm text-amber-900">
+        Need an account? <Link className="font-bold underline" href="/signup">Create one</Link>
       </p>
     </form>
   );

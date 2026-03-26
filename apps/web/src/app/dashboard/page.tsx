@@ -58,8 +58,8 @@ export default function DashboardPage() {
 
   if (isHydrating || !user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-5xl items-center px-6 py-10">
-        <p className="text-slate-600">Loading your dashboard...</p>
+      <main className="mx-auto flex min-h-screen max-w-6xl items-center px-5 py-10 sm:px-8">
+        <p className="text-base font-semibold text-amber-100">Loading your village...</p>
       </main>
     );
   }
@@ -103,14 +103,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
-      <div className="flex items-start justify-between gap-4">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-10 sm:px-8">
+      <div className="coc-shell coc-enter flex flex-wrap items-start justify-between gap-4 p-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-2 text-slate-600">Welcome back, {user.username}. Room creation and match history come next.</p>
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-amber-800">Command Center</p>
+          <h1 className="mt-1 text-3xl font-bold text-amber-950">Welcome back, {user.username}</h1>
+          <p className="mt-2 text-amber-900">Create a new clash room or jump straight into one with a code.</p>
         </div>
         <button
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900"
+          className="coc-btn-secondary px-4 py-2 text-sm"
           type="button"
           onClick={() => {
             logout();
@@ -121,21 +122,16 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Account</h2>
-        <p className="mt-3 text-slate-700">Email: {user.email}</p>
-        <p className="mt-1 text-slate-700">Username: {user.username}</p>
-      </section>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section className="coc-card p-6">
+          <h2 className="text-xl font-bold text-amber-950">Create Clash Room</h2>
+          <p className="mt-2 text-sm text-amber-900">Host a room for up to 10 players and launch battles instantly.</p>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Create Room</h2>
-        <p className="mt-2 text-sm text-slate-600">Host a room for up to 10 players.</p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-2 text-sm font-bold text-amber-900">
             Duration
             <select
-              className="rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+              className="coc-input px-3 py-2"
               value={durationSec}
               onChange={(event) => setDurationSec(Number(event.target.value) as 30 | 60 | 120)}
             >
@@ -145,10 +141,10 @@ export default function DashboardPage() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className="flex flex-col gap-2 text-sm font-bold text-amber-900">
             Rounds
             <select
-              className="rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+              className="coc-input px-3 py-2"
               value={bestOf}
               onChange={(event) => setBestOf(Number(event.target.value) as 1 | 3 | 5)}
             >
@@ -157,49 +153,46 @@ export default function DashboardPage() {
               <option value={5}>Best of 5</option>
             </select>
           </label>
-        </div>
+          </div>
 
-        {createError ? <p className="mt-3 text-sm text-red-600">{createError}</p> : null}
+          {createError ? <p className="mt-3 text-sm font-semibold text-red-700">{createError}</p> : null}
 
-        <button
-          className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          type="button"
-          onClick={handleCreateRoom}
-          disabled={isCreating}
-        >
-          {isCreating ? "Creating..." : "Create Room"}
-        </button>
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Join Room</h2>
-        <p className="mt-2 text-sm text-slate-600">Paste a room code or invite URL.</p>
-
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
-            type="text"
-            value={joinCodeInput}
-            onChange={(event) => setJoinCodeInput(event.target.value)}
-            placeholder="Example: AB12CD or full invite link"
-          />
-          <button
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            type="button"
-            onClick={handleJoinRoom}
-            disabled={isJoining}
-          >
-            {isJoining ? "Joining..." : "Join Room"}
+          <button className="coc-btn-primary mt-4 px-4 py-2 text-sm disabled:opacity-60" type="button" onClick={handleCreateRoom} disabled={isCreating}>
+            {isCreating ? "Creating..." : "Create Room"}
           </button>
-        </div>
+        </section>
 
-        {joinError ? <p className="mt-3 text-sm text-red-600">{joinError}</p> : null}
-      </section>
+        <section className="coc-card p-6">
+          <h2 className="text-xl font-bold text-amber-950">Join Existing Room</h2>
+          <p className="mt-2 text-sm text-amber-900">Paste room code or full invite link to join your clan.</p>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Recent Matches</h2>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <input
+              className="coc-input w-full px-3 py-2"
+              type="text"
+              value={joinCodeInput}
+              onChange={(event) => setJoinCodeInput(event.target.value)}
+              placeholder="Example: AB12CD or full invite link"
+            />
+            <button className="coc-btn-primary px-4 py-2 text-sm disabled:opacity-60" type="button" onClick={handleJoinRoom} disabled={isJoining}>
+              {isJoining ? "Joining..." : "Join"}
+            </button>
+          </div>
+
+          {joinError ? <p className="mt-3 text-sm font-semibold text-red-700">{joinError}</p> : null}
+
+          <div className="mt-6 rounded-xl border border-amber-300 bg-amber-100/70 p-4 text-sm text-amber-900">
+            <p className="font-bold">Account</p>
+            <p className="mt-1">Email: {user.email}</p>
+            <p>Username: {user.username}</p>
+          </div>
+        </section>
+      </div>
+
+      <section className="coc-card mt-6 p-6">
+        <h2 className="text-xl font-bold text-amber-950">Recent Battles</h2>
         {recentMatches.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">No completed matches yet.</p>
+          <p className="mt-2 text-sm text-amber-900">No completed matches yet.</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {recentMatches.map((match) => {
@@ -207,15 +200,15 @@ export default function DashboardPage() {
               const isWinner = match.winnerId === user.id;
 
               return (
-                <li key={match.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">
-                  <p className="font-medium text-slate-900">
+                <li key={match.id} className="rounded-xl border border-amber-300 bg-amber-50/80 px-3 py-3 text-sm text-amber-900">
+                  <p className="font-bold text-amber-950">
                     Room {match.room?.code ?? "-"} | {isWinner ? "Won" : "Played"}
                   </p>
-                  <p className="mt-1 text-slate-600">
+                  <p className="mt-1 text-amber-800">
                     {match.endedAt ? new Date(match.endedAt).toLocaleString() : "Completed"}
                   </p>
                   {topStat ? (
-                    <p className="mt-1 text-slate-600">
+                    <p className="mt-1 text-amber-800">
                       Top Score: {topStat.user.username} | WPM {topStat.wpm.toFixed(2)} | Acc {topStat.accuracy.toFixed(2)}%
                     </p>
                   ) : null}
